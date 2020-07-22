@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Text;
 
 namespace Cars
@@ -11,8 +12,8 @@ namespace Cars
         public string Name { get; set; }
         public double Displacement { get; set; }
         public int Cylinders { get; set; }
-        public double City { get; set; }
-        public double Highway { get; set; }
-        public double Combined { get; set; }
+        public int City { get; set; }
+        public int Highway { get; set; }
+        public int Combined { get; set; }
     }
 }
