@@ -109,7 +109,7 @@ namespace Cars
                 Console.WriteLine($"HQ: {car.Headquarters} - CarName: {car.Name}  - MPG: {car.Combined}");
             }
 
-            Console.WriteLine("Joins with composite key (Method Syntax)");
+            Console.WriteLine("Joins with composite key  (Method Syntax)");
             // Joins with Method Syntax
             var query_FuelEfficientManufacturers_CompositeKey_MethodSyntax =
                 cars.Join(manufacturers, c => new { c.Manufacturer, c.Year },
@@ -124,6 +124,45 @@ namespace Cars
             foreach (var car in query_FuelEfficientManufacturers_CompositeKey_MethodSyntax.Take(10))
             {
                 Console.WriteLine($"HQ: {car.Headquarters} - CarName: {car.Name}  - MPG: {car.Combined}");
+            }
+
+            Console.WriteLine("***");
+            FindTwoMostFuelEfficientCarsByManufacturer("Fuel.csv");
+        }
+
+        private static void FindTwoMostFuelEfficientCarsByManufacturer(string path)
+        {
+            // Find the 2 most fuel efficient cars for each Manufacturer
+
+            // Use LINQ Query Syntax
+            var cars = ProcessCars("fuel.csv");
+            var query_GroupByManufacturerQuerySyntax =
+                from car in cars
+                group car by car.Manufacturer.ToUpper() into manufacturer
+                orderby manufacturer.Key
+                select manufacturer;
+
+            foreach (var group in query_GroupByManufacturerQuerySyntax)
+            {
+                Console.WriteLine(group.Key);
+                foreach (var car in group.OrderByDescending(c => c.Combined).Take(2))
+                {
+                    Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
+                }
+            }
+
+            // Use LINQ Method Syntax
+            var query_GroupByManufacturerMethodSyntax =
+                cars.GroupBy(c => c.Manufacturer.ToUpper())
+                    .OrderBy(g => g.Key);
+
+            foreach (var group in query_GroupByManufacturerMethodSyntax)
+            {
+                Console.WriteLine($"\n {group.Key}");
+                foreach (var car in group.OrderByDescending(c => c.Combined).Take(2))
+                {
+                    Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
+                }
             }
         }
 
