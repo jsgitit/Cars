@@ -144,7 +144,7 @@ namespace Cars
 
             foreach (var group in query_GroupByManufacturerQuerySyntax)
             {
-                Console.WriteLine(group.Key);
+                Console.WriteLine($"\n {group.Key}");
                 foreach (var car in group.OrderByDescending(c => c.Combined).Take(2))
                 {
                     Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
