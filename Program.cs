@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -128,6 +129,10 @@ namespace Cars
 
             Console.WriteLine("***");
             FindTwoMostFuelEfficientCarsByManufacturer("Fuel.csv");
+
+            Console.WriteLine("***"); 
+            GroupJoinQuery("Fuel.csv");
+
         }
 
         private static void FindTwoMostFuelEfficientCarsByManufacturer(string path)
@@ -166,6 +171,51 @@ namespace Cars
             }
         }
 
+        private static void GroupJoinQuery(string path)
+        {
+            var cars = ProcessCars("fuel.csv");
+            var manufacturers = ProcessManufacturers("manufacturers.csv");
+            
+            // Use LINQ Query Syntax
+            var queryGroupJoinQuerySyntax =
+                from manufacturer in manufacturers
+                join car in cars on manufacturer.Name equals car.Manufacturer
+                into carGroup  // stores the grouping
+                orderby manufacturer.Name
+                select new // project these objects
+                {
+                    Manufacturer = manufacturer,
+                    Cars = carGroup
+                };
+
+            foreach (var group in queryGroupJoinQuerySyntax)
+            {
+                Console.WriteLine($"\n {group.Manufacturer.Name}:{group.Manufacturer.Headquarters}");
+                foreach (var car in group.Cars.OrderByDescending(c => c.Combined).Take(2))
+                {
+                    Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
+                }
+            }
+            // Use LINQ Method Syntax
+            var queryGroupJoinMethodSyntax =
+                manufacturers.GroupJoin(cars, m => m.Name, c => c.Manufacturer, (m, g) => new
+                    {
+                        Manufacturer = m,
+                        Cars = g
+                    })
+                .OrderBy(m => m.Manufacturer.Name);
+            
+            foreach (var group in queryGroupJoinMethodSyntax)
+            {
+                Console.WriteLine($"\n {group.Manufacturer.Name}:{group.Manufacturer.Headquarters}");
+                foreach (var car in group.Cars.OrderByDescending(c => c.Combined).Take(2))
+                {
+                    Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
+                }
+            }
+
+        }
+
         private static List<Manufacturer> ProcessManufacturers(string path)
         {
             var query = File.ReadAllLines(path)
@@ -183,6 +233,7 @@ namespace Cars
             return query.ToList();
         }
 
+        
         private static List<Car> ProcessCars(string path)
         {
             var query = File.ReadAllLines(path)
