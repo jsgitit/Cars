@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Cars
 {
@@ -133,6 +134,9 @@ namespace Cars
             Console.WriteLine("***"); 
             GroupJoinQuery("Fuel.csv");
 
+            Console.WriteLine("***");
+            GroupByCountryShowTopThreeCars("Fuel.csv", "Manufacturers.csv");
+
         }
 
         private static void FindTwoMostFuelEfficientCarsByManufacturer(string path)
@@ -169,6 +173,8 @@ namespace Cars
                     Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
                 }
             }
+
+
         }
 
         private static void GroupJoinQuery(string path)
@@ -187,7 +193,6 @@ namespace Cars
                     Manufacturer = manufacturer,
                     Cars = carGroup
                 };
-
             foreach (var group in queryGroupJoinQuerySyntax)
             {
                 Console.WriteLine($"\n {group.Manufacturer.Name}:{group.Manufacturer.Headquarters}");
@@ -196,6 +201,7 @@ namespace Cars
                     Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
                 }
             }
+
             // Use LINQ Method Syntax
             var queryGroupJoinMethodSyntax =
                 manufacturers.GroupJoin(cars, m => m.Name, c => c.Manufacturer, (m, g) => new
@@ -204,7 +210,6 @@ namespace Cars
                         Cars = g
                     })
                 .OrderBy(m => m.Manufacturer.Name);
-            
             foreach (var group in queryGroupJoinMethodSyntax)
             {
                 Console.WriteLine($"\n {group.Manufacturer.Name}:{group.Manufacturer.Headquarters}");
@@ -213,7 +218,57 @@ namespace Cars
                     Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
                 }
             }
+        }
 
+        private static void GroupByCountryShowTopThreeCars(string FuelPath, string ManufacturerPath)
+        {
+            // Get some data
+            var cars = ProcessCars(FuelPath);
+            var manufacturers = ProcessManufacturers(ManufacturerPath);
+
+            var queryGroupJoinQuerySyntax =
+                from manufacturer in manufacturers
+                join car in cars on manufacturer.Name equals car.Manufacturer
+                into carGroup
+                select new
+                {
+                    Manufacturer = manufacturer,
+                    Cars = carGroup
+                } into result
+                group result by result.Manufacturer.Headquarters;
+
+            foreach (var group in queryGroupJoinQuerySyntax)
+            {
+                Console.WriteLine($"\n {group.Key}");
+                foreach (var car in group.SelectMany(g => g.Cars)
+                                         .OrderByDescending(g => group)
+                                         .Take(3))
+                {
+                    Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
+                }
+            }
+
+            Console.WriteLine("***");
+            // Use LINQ Method Syntax
+            var queryGroupJoinMethodSyntax =
+                manufacturers.GroupJoin(cars, m => m.Name, c => c.Manufacturer, (m, g) => new
+                {
+                    Manufacturer = m,
+                    Cars = g
+                })
+                .GroupBy(m => m.Manufacturer.Headquarters.ToUpper())
+                .OrderBy(m => m.Key);
+
+            foreach (var group in queryGroupJoinMethodSyntax)
+            {
+                Console.WriteLine($"\n {group.Key}");
+                foreach (var car in group.SelectMany(g => g.Cars)
+                                         .OrderByDescending(g => group)
+                                         .Take(3))
+                {
+                    Console.WriteLine($"\t{car.Name} has a combined fuel efficiency of {car.Combined} MPG");
+                }
+            }
         }
 
         private static List<Manufacturer> ProcessManufacturers(string path)
