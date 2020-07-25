@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace Cars
@@ -137,6 +139,8 @@ namespace Cars
             Console.WriteLine("***");
             GroupByCountryShowTopThreeCars("Fuel.csv", "Manufacturers.csv");
 
+            Console.WriteLine("***");
+            GetManufacturerStatistics("Fuel.csv", "Manufacturers.csv");
         }
 
         private static void FindTwoMostFuelEfficientCarsByManufacturer(string path)
@@ -271,6 +275,62 @@ namespace Cars
             }
         }
 
+        private static void GetManufacturerStatistics(string FuelPath, string ManufacturerPath)
+        {
+            // Get some data
+            var cars = ProcessCars(FuelPath);
+            var manufacturers = ProcessManufacturers(ManufacturerPath);
+
+            var queryGetStatsQuerySyntax =
+                from car in cars
+                group car by car.Manufacturer 
+                into carGroup
+                select new
+                {
+                    Name = carGroup.Key,
+                    Max = carGroup.Max(c => c.Combined),
+                    Min = carGroup.Min(c => c.Combined),
+                    Avg = carGroup.Average(c => c.Combined)
+                } into result
+                orderby result.Max descending
+                select result;
+
+            foreach (var result in queryGetStatsQuerySyntax)
+            {
+                Console.Write($"{result.Name}\t\t\t\t\t");
+                Console.Write($"{result.Min}\t");
+                Console.Write($"{result.Max}\t");
+                Console.WriteLine("F02: {0}",result.Avg);
+            }
+
+            Console.WriteLine("***");
+            // Use LINQ Method Syntax
+            var queryGetStatsMethodSyntax =
+                cars.GroupBy(c => c.Manufacturer)
+                    .Select(g =>
+                    {
+                        var results = g.Aggregate(new CarStats(),
+                            (acc, c) => acc.Accumulate(c),
+                            acc => acc.Compute());
+                        return new
+                        {
+                            Name = g.Key,
+                            Avg = results.Average,
+                            Min = results.Min,
+                            Max = results.Max
+                        };
+                    })
+                    .OrderByDescending(r => r.Max);
+
+            foreach (var result in queryGetStatsMethodSyntax)
+            {
+                Console.Write($"{result.Name}\t");
+                Console.Write($"{result.Min}\t");
+                Console.Write($"{result.Max}\t");
+                Console.WriteLine($"{result.Avg}\t");
+            }
+        }
+
         private static List<Manufacturer> ProcessManufacturers(string path)
         {
             var query = File.ReadAllLines(path)
@@ -303,7 +363,7 @@ namespace Cars
             //            where line.Length > 1
             //            select Car.ParseFromCSV(line);
             //return query.ToList();
-
+            
         }
 
 
