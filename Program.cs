@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Diagnostics;
+using System;
 using System.Collections.Generic;
-using System.Data.Common;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Xml.Linq;
+
 
 namespace Cars
 {
@@ -12,7 +13,7 @@ namespace Cars
     {
         private static void Main(string[] args)
         {
-            var cars = ProcessCars("fuel.csv");
+            //var cars = ProcessCars("fuel.csv");
             //var manufacturers = ProcessManufacturers("manufacturers.csv");
 
             //GetTopBMWsForYear(cars, 2016);
@@ -29,9 +30,66 @@ namespace Cars
             //CreateAttributeBasedXMLDocument(cars);
             //CreateAttributeBasedXMLDocument_v2(cars);
             //QueryXML();
-            CreateXMLWithNamespace(cars);
-            QueryXMLWithNamespace();
+            //CreateXMLWithNamespace(cars);
+            //QueryXMLWithNamespace();
+
+
+
+
+            InsertDataIntoDatabase();
+            ShowTenMostFuelEfficientCarsFromDatabase();
+
+
+
+        }
+
+        private static void ShowTenMostFuelEfficientCarsFromDatabase()
+        {
+            Console.WriteLine("The 10 most fuel efficient cars are as follows: ");
+            var carDB = new CarContext();
             
+            // LINQ Query Method syntax
+            var query =
+                    from car in carDB.Cars
+                    orderby car.Combined descending, car.Name ascending
+                    select car;
+
+            // LINQ Extension Method syntax
+            var query2 =
+                carDB.Cars
+                    .OrderByDescending(c => c.Combined)
+                    .ThenBy(c => c.Name)
+                    .Take(10);
+            
+            foreach (var car in query2)
+            {
+                Console.WriteLine($"{car.Name}: {car.Combined}");
+            }
+        }
+
+        private static void InsertDataIntoDatabase()
+        {
+            // this method will grab data out of the csv file and,
+            // put it into the sql server database
+            var cars = ProcessCars("fuel.csv");
+
+            var db = new CarContext();
+            db.Database.EnsureCreated();  // WARN: don't use EnsureCreated() in real application!!
+
+            if (!db.Cars.Any())
+            {
+                // If there are no cars, then add them
+                foreach (var car in cars)
+                {
+                    db.Cars.Add(car);
+                }
+                // Inserts actually occur when you call SaveChanges();
+                db.SaveChanges();
+
+            }
+
+
+
         }
 
         private static void QueryXMLWithNamespace()
@@ -50,7 +108,7 @@ namespace Cars
             // elements are not in the "ns" namespace because the document changed.
 
             var query =
-                from element in document.Element(ns + "Cars")?.Elements(ns + "Car")  ?? Enumerable.Empty<XElement>()  // namespace used.
+                from element in document.Element(ns + "Cars")?.Elements(ns + "Car") ?? Enumerable.Empty<XElement>()  // namespace used.
                 where element.Attribute("Manufacturer")?.Value == "BMW"
                 select element.Attribute("Name").Value;
 
@@ -59,7 +117,6 @@ namespace Cars
                 Console.WriteLine(name);
             }
         }
-
         private static void CreateXMLWithNamespace(List<Car> carsData)
         {
             // Create an Attribute-based XML document WITH namespace
@@ -81,7 +138,6 @@ namespace Cars
             //  < Car Name = "4C" Combined = "28" Manufacturer = "ALFA Romeo" />
             //  < Car Name = "V12 Vantage S" Combined = "14" Manufacturer = "Aston Martin Lagonda Ltd" />
         }
-
         private static void QueryXML()
         {
             var document = XDocument.Load("fuel.xml");
@@ -102,7 +158,6 @@ namespace Cars
                 Console.WriteLine(name);
             }
         }
-
         private static void CreateAttributeBasedXMLDocument_v2(List<Car> carsData)
         {
             // Create an Attribute-based XML document 
@@ -110,7 +165,7 @@ namespace Cars
 
             // This implements a shorter approach too vs. the Element-based method.
             // Note: This is a more dense implementation, declaritive, and eliminates the foreach loop
-            var cars = new XElement("Cars", 
+            var cars = new XElement("Cars",
                 from row in carsData
                 select new XElement("Car",
                             new XAttribute("Name", row.Name),
@@ -120,7 +175,6 @@ namespace Cars
             document.Add(cars);
             document.Save("fuel.xml");
         }
-
         private static void CreateAttributeBasedXMLDocument(List<Car> carsData)
         {
             // Create an Attribute-based XML document 
@@ -150,7 +204,6 @@ namespace Cars
             document.Add(cars);
             document.Save("fuel.xml");
         }
-
         private static void CreateElementBasedXMLDocument(List<Car> carsData)
         {
 
@@ -214,7 +267,6 @@ namespace Cars
             }
 
         }
-
         private static void DemonstrateJoins(List<Car> cars, List<Manufacturer> manufacturers)
         {
             Console.WriteLine("*** Joining cars and manufacturers with LINQ ***");
@@ -252,7 +304,6 @@ namespace Cars
                 Console.WriteLine($"HQ: {car.Headquarters} - CarName: {car.Name}  - MPG: {car.Combined}");
             }
         }
-
         private static void DemonstrateProjections(List<Car> cars)
         {
             Console.WriteLine("*** Demonstrating Projections and SelectMany() ***");
@@ -270,7 +321,6 @@ namespace Cars
             }
 
         }
-
         private static void DemonstrateQuantifiers(List<Car> cars)
         {
             Console.WriteLine("*** Demonstrating Quantifiers***");
@@ -283,7 +333,6 @@ namespace Cars
             result = cars.All(c => c.Manufacturer == "Ford"); // Are all Cars Fords? (False)
             Console.WriteLine("Are all cars fords? " + result);
         }
-
         private static void GetTopBMWsForYear(List<Car> cars, int year)
         {
             Console.WriteLine("*** Get Top BMWs for 2016 ***");
@@ -310,7 +359,6 @@ namespace Cars
 
             Console.WriteLine($"Top car: {topCar.Name}");
         }
-
         private static void FindTwoMostFuelEfficientCarsByManufacturer(List<Car> cars)
         {
             Console.WriteLine("*** Find the 2 most fuel efficient cars for each Manufacturer ***");
@@ -345,7 +393,6 @@ namespace Cars
                 }
             }
         }
-
         private static void GroupJoinQuery(List<Car> cars, List<Manufacturer> manufacturers)
         {
             Console.WriteLine("*** Using GroupJoin() LINQ Extension Method ***");
@@ -387,7 +434,6 @@ namespace Cars
                 }
             }
         }
-
         private static void GroupByCountryShowTopThreeCars(List<Car> cars, List<Manufacturer> manufacturers)
         {
             Console.WriteLine("*** Group By Headquarters Country, then show Top 3 Cars ***");
@@ -436,7 +482,6 @@ namespace Cars
                 }
             }
         }
-
         private static void GetManufacturerStatistics(List<Car> cars)
         {
             Console.WriteLine("*** Get Manufacturer Statistics *** ");
@@ -490,7 +535,6 @@ namespace Cars
                 Console.WriteLine($"{result.Avg}\t");
             }
         }
-
         private static List<Manufacturer> ProcessManufacturers(string path)
         {
             Console.WriteLine("*** Reading all Manufacturers from file ***");
@@ -508,7 +552,6 @@ namespace Cars
                             });
             return query.ToList();
         }
-
         private static List<Car> ProcessCars(string path)
         {
             Console.WriteLine("*** Reading all Cars from file ***");
