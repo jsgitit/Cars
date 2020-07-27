@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Xml.Linq;
 
 namespace Cars
 {
@@ -10,19 +13,164 @@ namespace Cars
         private static void Main(string[] args)
         {
             var cars = ProcessCars("fuel.csv");
-            var manufacturers = ProcessManufacturers("manufacturers.csv");
+            //var manufacturers = ProcessManufacturers("manufacturers.csv");
 
-            GetTopBMWsForYear(cars, 2016);
-            DemonstrateQuantifiers(cars);
-            DemonstrateProjections(cars);
-            DemonstrateJoins(cars, manufacturers);
-            DemonstrateCompositeJoins(cars, manufacturers);
-            FindTwoMostFuelEfficientCarsByManufacturer(cars);
-            GroupJoinQuery(cars, manufacturers);
-            GroupByCountryShowTopThreeCars(cars, manufacturers);
-            GetManufacturerStatistics(cars);
+            //GetTopBMWsForYear(cars, 2016);
+            //DemonstrateQuantifiers(cars);
+            //DemonstrateProjections(cars);
+            //DemonstrateJoins(cars, manufacturers);
+            //DemonstrateCompositeJoins(cars, manufacturers);
+            //FindTwoMostFuelEfficientCarsByManufacturer(cars);
+            //GroupJoinQuery(cars, manufacturers);
+            //GroupByCountryShowTopThreeCars(cars, manufacturers);
+            //GetManufacturerStatistics(cars);
+
+            //CreateElementBasedXMLDocument(cars);
+            //CreateAttributeBasedXMLDocument(cars);
+            //CreateAttributeBasedXMLDocument_v2(cars);
+            //QueryXML();
+            CreateXMLWithNamespace(cars);
+            QueryXMLWithNamespace();
+            
         }
 
+        private static void QueryXMLWithNamespace()
+        {
+
+            var ns = (XNamespace)"http://pluralsight.com/cars/2016";  // namespace used
+            var document = XDocument.Load("fuel.xml");
+
+            // Find all cars manufactured by BMW, within the namespace.
+            // Elements() is an IEnumerable<>, so we can use LINQ to query
+            // It explicitly navigates to each car vs. using Decendents("Car"), because 
+            // we want to guard against document being reorganized in the future.  
+            // The specs said it should look this way.
+
+            // Also notice how we're using null coalescence, in case Elements don't exist, or, 
+            // elements are not in the "ns" namespace because the document changed.
+
+            var query =
+                from element in document.Element(ns + "Cars")?.Elements(ns + "Car")  ?? Enumerable.Empty<XElement>()  // namespace used.
+                where element.Attribute("Manufacturer")?.Value == "BMW"
+                select element.Attribute("Name").Value;
+
+            foreach (var name in query)
+            {
+                Console.WriteLine(name);
+            }
+        }
+
+        private static void CreateXMLWithNamespace(List<Car> carsData)
+        {
+            // Create an Attribute-based XML document WITH namespace
+            var document = new XDocument();
+            var ns = (XNamespace)"http://pluralsight.com/cars/2016";  // namespace used
+            var cars = new XElement(ns + "Cars",                        // namespace used
+                from row in carsData
+                select new XElement(ns + "Car",                         // namespace used
+                            new XAttribute("Name", row.Name),
+                            new XAttribute("Combined", row.Combined),
+                            new XAttribute("Manufacturer", row.Manufacturer))
+                );
+            document.Add(cars);
+            document.Save("fuel.xml");
+
+            // Creates output like:
+            //<? xml version = "1.0" encoding = "utf-8" ?>
+            //< Cars xmlns = "http://pluralsight.com/cars/2016" >
+            //  < Car Name = "4C" Combined = "28" Manufacturer = "ALFA Romeo" />
+            //  < Car Name = "V12 Vantage S" Combined = "14" Manufacturer = "Aston Martin Lagonda Ltd" />
+        }
+
+        private static void QueryXML()
+        {
+            var document = XDocument.Load("fuel.xml");
+
+            // Find all cars manufactured by BMW
+            // Elements() is an IEnumerable<>, so we can use LINQ to query
+            // It explicitly navigates to each car vs. using Decendents("Car"), because 
+            // we want to guard against document being reorganized in the future.  
+            // The specs said it should look this way.
+
+            var query =
+                from element in document.Elements("Cars").Elements("Car")
+                where element.Attribute("Manufacturer")?.Value == "BMW"
+                select element.Attribute("Name").Value;
+
+            foreach (var name in query)
+            {
+                Console.WriteLine(name);
+            }
+        }
+
+        private static void CreateAttributeBasedXMLDocument_v2(List<Car> carsData)
+        {
+            // Create an Attribute-based XML document 
+            var document = new XDocument();
+
+            // This implements a shorter approach too vs. the Element-based method.
+            // Note: This is a more dense implementation, declaritive, and eliminates the foreach loop
+            var cars = new XElement("Cars", 
+                from row in carsData
+                select new XElement("Car",
+                            new XAttribute("Name", row.Name),
+                            new XAttribute("Combined", row.Combined),
+                            new XAttribute("Manufacturer", row.Manufacturer))
+                );
+            document.Add(cars);
+            document.Save("fuel.xml");
+        }
+
+        private static void CreateAttributeBasedXMLDocument(List<Car> carsData)
+        {
+            // Create an Attribute-based XML document 
+
+            var document = new XDocument();
+            var cars = new XElement("Cars");
+
+            // This implements a shorter approach too vs. the Element-based method.
+            foreach (var row in carsData)
+            {
+                // var name = new XElement("Name", row.Name);
+                // var combined = new XElement("Combined", row.Combined);
+
+                // add name and combined attributes 
+                // when building the element, aka "functional construction"
+                // var car = new XElement("Car", name, combined); 
+
+                // more dense implementation
+
+                var car = new XElement("Car",
+                    new XAttribute("Name", row.Name),
+                    new XAttribute("Combined", row.Combined),
+                    new XAttribute("Manufacturer", row.Manufacturer)
+                    );
+                cars.Add(car);
+            }
+            document.Add(cars);
+            document.Save("fuel.xml");
+        }
+
+        private static void CreateElementBasedXMLDocument(List<Car> carsData)
+        {
+
+            // Create an Element-based XML document 
+            var document = new XDocument();
+            var cars = new XElement("Cars");
+
+            // This is the long way to create an element for each car
+            foreach (var row in carsData)
+            {
+                var car = new XElement("Car");
+                var name = new XElement("Name", row.Name);
+                var combined = new XElement("Combined", row.Combined);
+                car.Add(name);
+                car.Add(combined);
+                cars.Add(car);
+            }
+            document.Add(cars);
+            document.Save("fuel.xml");
+        }
         private static void DemonstrateCompositeJoins(List<Car> cars, List<Manufacturer> manufacturers)
         {
 

@@ -1,0 +1,32 @@
+﻿<!-- Element-based output sample -->
+<Cars>
+	<Car>
+		<Name>abc</Name>
+		<Combined>24</Combined>
+	</Car>
+    <Car>
+		<Name>def</Name>
+		<Combined>28</Combined>
+	</Car>
+	... More cars
+</Cars>
+
+<!-- Attribute-based output sample 
+<Cars>
+	<Car Name="abc" Combined="24"></Car>
+	<Car Name="def" Combined="28"></Car>
+	... More cars
+</Cars>
+-->
+
+<!-- Mixed output sample 
+<Cars>
+	<Manufacturer Name="xyz">
+		<Car Name="abc" Combined="24"></Car>
+		<Car Name="def" Combined="28"></Car>
+	</Manufacturer>
+	... more manufacturers
+</Cars>
+-->
+
+
