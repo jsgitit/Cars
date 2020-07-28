@@ -73,18 +73,18 @@ namespace Cars
             // put it into the sql server database
             var cars = ProcessCars("fuel.csv");
 
-            var db = new CarContext();
-            db.Database.EnsureCreated();  // WARN: don't use EnsureCreated() in real application!!
+            var CarDB = new CarContext();
+            CarDB.Database.EnsureCreated();  // WARN: don't use EnsureCreated() in real application!!
 
-            if (!db.Cars.Any())
+            if (!CarDB.Cars.Any())
             {
                 // If there are no cars, then add them
                 foreach (var car in cars)
                 {
-                    db.Cars.Add(car);
+                    CarDB.Cars.Add(car);
                 }
                 // Inserts actually occur when you call SaveChanges();
-                db.SaveChanges();
+                CarDB.SaveChanges();
 
             }
 
