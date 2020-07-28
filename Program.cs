@@ -35,7 +35,6 @@ namespace Cars
             //ShowTenMostFuelEfficientCarsFromDatabase();
             ShowTwoMostFuelEfficientCarsByManufactuer();
 
-
         }
 
         private static void ShowTwoMostFuelEfficientCarsByManufactuer()
