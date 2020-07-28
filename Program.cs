@@ -41,14 +41,26 @@ namespace Cars
         {
             Console.WriteLine("The 2 most fuel efficient cars by Manufacturer: ");
             var carDB = new CarContext();
+            //var query =
+            //   carDB.Cars.GroupBy(c => c.Manufacturer)
+            //             .Select(g => new
+            //             {
+            //                 Name = g.Key,
+            //                 Cars = g.OrderByDescending(c => c.Combined).Take(2)
+            //             }); // returns System.InvalidOperationException - unsupported?
+                             
+            // As a workaround I rewrote the above query to do things client-side way by
+            // using ToList() to move everything in memory.  Not ideal but EFCore 3.1 
+            // has an issue with GroupBy.
             var query =
-               carDB.Cars.GroupBy(c => c.Manufacturer)
-                         .Select(g => new
-                         {
-                             Name = g.Key,
-                             Cars = g.OrderByDescending(c => c.Combined).Take(2)
-                         }); // returns System.InvalidOperationException - unsupported?
-                             // rewrite this query in a way that does things client-side.
+                    carDB.Cars.ToList()
+                              .GroupBy(c => c.Manufacturer)
+                              .OrderBy(c => c.Key)
+                              .Select(g => new
+                                {
+                                    Name = g.Key,
+                                    Cars = g.OrderByDescending(c => c.Combined).Take(2)
+                                }); 
 
             var query2 =
                 from car in carDB.Cars
