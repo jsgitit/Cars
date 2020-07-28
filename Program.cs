@@ -36,7 +36,6 @@ namespace Cars
             ShowTwoMostFuelEfficientCarsByManufactuer();
 
         }
-
         private static void ShowTwoMostFuelEfficientCarsByManufactuer()
         {
             Console.WriteLine("The 2 most fuel efficient cars by Manufacturer: ");
@@ -91,7 +90,6 @@ namespace Cars
                 }
             }
         }
-
         private static void ShowTenMostFuelEfficientCarsFromDatabase()
         {
             Console.WriteLine("The 10 most fuel efficient cars are as follows: ");
@@ -116,7 +114,6 @@ namespace Cars
                 Console.WriteLine($"{car.Name}: {car.Combined}");
             }
         }
-
         private static void InsertDataIntoDatabase()
         {
             // this method will grab data out of the csv file and,
