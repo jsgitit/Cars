@@ -1,7 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Diagnostics;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -33,21 +31,61 @@ namespace Cars
             //CreateXMLWithNamespace(cars);
             //QueryXMLWithNamespace();
 
+            //InsertDataIntoDatabase();
+            //ShowTenMostFuelEfficientCarsFromDatabase();
+            ShowTwoMostFuelEfficientCarsByManufactuer();
 
 
+        }
 
-            InsertDataIntoDatabase();
-            ShowTenMostFuelEfficientCarsFromDatabase();
+        private static void ShowTwoMostFuelEfficientCarsByManufactuer()
+        {
+            Console.WriteLine("The 2 most fuel efficient cars by Manufacturer: ");
+            var carDB = new CarContext();
+            var query =
+               carDB.Cars.GroupBy(c => c.Manufacturer)
+                         .Select(g => new
+                         {
+                             Name = g.Key,
+                             Cars = g.OrderByDescending(c => c.Combined).Take(2)
+                         }); // returns System.InvalidOperationException - unsupported?
+                             // rewrite this query in a way that does things client-side.
 
+            var query2 =
+                from car in carDB.Cars
+                group car by car.Manufacturer into manufacturer
+                select new
+                {
+                    Name = manufacturer.Key,
+                    Cars = manufacturer.OrderByDescending(c => c.Combined).Take(2)
+                }; // same error as first query
 
+            var query3 =
+                from car in carDB.Cars
+                group car by car.Manufacturer into manufacturer
+                select new
+                {
+                    Name = manufacturer.Key,
+                    Cars = (from car in manufacturer
+                            orderby car.Combined descending
+                            select car).Take(2)
+                }; // wow, still fails with the same error.
 
+            foreach (var group in query)
+            {
+                Console.WriteLine(group.Name);
+                foreach (var car in group.Cars)
+                {
+                    Console.WriteLine($"\t{car.Name}: {car.Combined}");
+                }
+            }
         }
 
         private static void ShowTenMostFuelEfficientCarsFromDatabase()
         {
             Console.WriteLine("The 10 most fuel efficient cars are as follows: ");
             var carDB = new CarContext();
-            
+
             // LINQ Query Method syntax
             var query =
                     from car in carDB.Cars
@@ -59,8 +97,9 @@ namespace Cars
                 carDB.Cars
                     .OrderByDescending(c => c.Combined)
                     .ThenBy(c => c.Name)
-                    .Take(10);
-            
+                    .Take(10)
+                    .ToList();
+
             foreach (var car in query2)
             {
                 Console.WriteLine($"{car.Name}: {car.Combined}");
@@ -91,7 +130,6 @@ namespace Cars
 
 
         }
-
         private static void QueryXMLWithNamespace()
         {
 
